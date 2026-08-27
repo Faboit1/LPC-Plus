@@ -5,11 +5,21 @@ main: ${main.class}
 author: ${author}
 api-version: 1.13
 depend: [LuckPerms]
-softdepend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI, FriendSystem]
 commands:
   lpc:
     description: LPC commands.
     usage: "Usage: /lpc <reload|clear|debug>"
+  showchatfrom:
+    description: Choose whose public chat you see.
+    aliases: [scf]
+    usage: "Usage: /showchatfrom <everyone|friends|none>"
+    permission: lpc.showchatfrom
+  allowmentions:
+    description: Choose who may mention you in chat.
+    aliases: [mentions]
+    usage: "Usage: /allowmentions <friends|all|nobody>"
+    permission: lpc.allowmentions
 permissions:
   lpc.reload:
     description: Allows use of /lpc reload
@@ -26,3 +36,18 @@ permissions:
   lpc.rgbcodes:
     description: Allows RGB/hex color codes in chat messages
     default: false
+  lpc.showchatfrom:
+    description: Allows use of /showchatfrom
+    default: true
+  lpc.allowmentions:
+    description: Allows use of /allowmentions
+    default: true
+  lpc.emoji:
+    description: Allows :shortcode: emoji in chat messages
+    default: true
+  lpc.mention:
+    description: Allows mentioning other players in chat
+    default: true
+  lpc.bypass.characters:
+    description: Exempts a player from the chat character filter
+    default: op

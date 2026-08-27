@@ -14,12 +14,21 @@
 # {message-color} - the player's or the group's message color
 #
 # Color codes: Use & for colors (&a, &b, etc.) and &#rrggbb for hex colors.
-# Permissions: lpc.reload, lpc.clearchat, lpc.debug, lpc.colorcodes, lpc.rgbcodes
+# Permissions: lpc.reload, lpc.clearchat, lpc.debug, lpc.colorcodes, lpc.rgbcodes,
+#              lpc.showchatfrom, lpc.allowmentions, lpc.emoji, lpc.mention,
+#              lpc.bypass.characters
 #
 # Commands:
 #   /lpc reload - Reload configuration
 #   /lpc clear - Clear chat for all players
 #   /lpc debug <player> - Show resolved prefix/suffix info for a player
+#   /showchatfrom <everyone|friends|none> - Whose public chat you see
+#   /allowmentions <friends|all|nobody> - Who may ping you by name
+#
+# The 'friends' option of both commands is answered by the FriendSystem plugin
+# (https://github.com/Faboit1/Friendsystem). It is optional: without it installed
+# LPC cannot tell who is friends with whom, so 'friends' behaves like the open
+# option and players are told so when they pick it.
 #
 # More information: https://www.spigotmc.org/resources/68965
 
@@ -38,3 +47,110 @@ group-formats:
 
 # Message shown after /lpc clear
 clear-chat-message: "&7Chat has been cleared by a staff member."
+
+# ===========================================================================
+# Emoji
+# ===========================================================================
+# Replaces :shortcode: tokens in chat with a character. On Paper the emoji also
+# carries a hover showing the shortcode it came from, so players can see how a
+# symbol was typed. Plain Spigot's chat event is a single string with nowhere to
+# put a hover, so there the character is substituted without one.
+#
+# Shortcodes are plain ASCII, so they are never caught by the character filter
+# below: a player can type :heart: on a server that only allows ASCII and still
+# get the symbol, because LPC substitutes it after the message is checked.
+#
+# The defaults are written as \uXXXX escapes so they cannot be mangled by an
+# editor or a build step that is not UTF-8. Paste the character itself instead
+# if you prefer - just make sure you save this file as UTF-8.
+#
+# Requires the lpc.emoji permission (granted to everyone by default).
+emoji:
+  enabled: true
+
+  # Hover text on the emoji. {code} becomes the shortcode, for example ":heart:".
+  hover: "&7{code}"
+
+  # shortcode: character      -- typed in chat as :shortcode:
+  list:
+    heart: "\u2764"
+    star: "\u2605"
+    star2: "\u2606"
+    check: "\u2714"
+    cross: "\u2716"
+    smile: "\u263A"
+    frown: "\u2639"
+    note: "\u266A"
+    notes: "\u266B"
+    sun: "\u2600"
+    cloud: "\u2601"
+    umbrella: "\u2602"
+    snowman: "\u2603"
+    skull: "\u2620"
+    swords: "\u2694"
+    warning: "\u26A0"
+    bolt: "\u26A1"
+    arrow: "\u2192"
+    left: "\u2190"
+    up: "\u2191"
+    down: "\u2193"
+    dot: "\u2022"
+    spade: "\u2660"
+    club: "\u2663"
+    diamond: "\u2666"
+
+# ===========================================================================
+# Mentions
+# ===========================================================================
+# Typing a player's name pings them: their name is repainted in the message, and
+# they get a sound and an action bar. Each player chooses who is allowed to do
+# that to them with /allowmentions, and a name is only highlighted when the ping
+# is actually allowed, so the colour never promises a ping that did not happen.
+#
+# Sending mentions requires the lpc.mention permission (granted by default).
+mentions:
+  enabled: true
+
+  # true  - only "@Name" pings; a bare "Name" is ignored
+  # false - both "Name" and "@Name" ping
+  require-at: false
+
+  # Colour the mentioned name is repainted in. Leave empty to only ping.
+  highlight: "&e"
+
+  # Namespaced sound key, or empty for a silent mention.
+  sound: "entity.experience_orb.pickup"
+  volume: 1.0
+  pitch: 1.2
+
+  # Action bar shown to the mentioned player. {player} becomes the sender's name.
+  action-bar: "&e{player} &7mentioned you in chat."
+
+# ===========================================================================
+# Character filter
+# ===========================================================================
+# Refuses messages containing characters you do not want in chat - symbols the
+# vanilla font cannot draw, combining marks stacked into "zalgo" text, or
+# right-to-left overrides used to scramble a line.
+#
+# Rather than listing everything to ban, the filter is written the other way
+# round: allowed-characters is a regular-expression character class saying what
+# IS allowed, and anything outside it is refused. The default is printable
+# ASCII, which is the range the default Minecraft font renders.
+#
+# The message is checked as the player typed it, before colour codes are
+# translated, and players with lpc.bypass.characters skip the check entirely.
+#
+# Some other useful values:
+#   "[\x20-\x7E]"            printable ASCII only (the default)
+#   "[\x20-\x7E\u00C0-\u017F]"  ASCII plus accented Latin letters
+#   "[^\p{Cntrl}\p{Cf}\p{Mn}]"   anything except control, formatting and
+#                                combining characters - a much looser rule that
+#                                still stops zalgo text and RTL overrides
+chat-filter:
+  block-disallowed-characters: false
+  allowed-characters: "[\x20-\x7E]"
+
+  # Shown to the player in chat and on the action bar when a message is refused.
+  # {character} becomes the first character that was not allowed.
+  warning: "&cYour message was not sent: &7'&f{character}&7' &cis not allowed in chat here."
