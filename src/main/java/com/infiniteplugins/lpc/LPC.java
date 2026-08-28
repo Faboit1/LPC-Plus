@@ -98,8 +98,18 @@ public final class LPC extends JavaPlugin implements Listener {
 		command.setTabCompleter(executor);
 	}
 
-	/** Rebuilds the config-driven chat helpers. Called on enable and on {@code /lpc reload}. */
+	/**
+	 * Rebuilds the config-driven chat helpers. Called on enable and on {@code /lpc reload}.
+	 *
+	 * <p>{@code copyDefaults} makes anything missing from the server's own config.yml fall
+	 * back to the copy inside the jar. Without it a server that upgraded the plugin but
+	 * kept its existing config.yml would silently get no emoji at all, because the file
+	 * saved before this release has no {@code emoji} section and {@code saveDefaultConfig}
+	 * will not overwrite it. Settings the admin did set still win, and the character
+	 * filter stays off unless they turn it on.</p>
+	 */
 	private void reloadChatSettings() {
+		getConfig().options().copyDefaults(true);
 		this.emoji = new EmojiService(getConfig().getConfigurationSection("emoji"));
 		this.characterFilter = new CharacterFilter(getConfig().getConfigurationSection("chat-filter"), getLogger());
 		this.mentions = new MentionService(getConfig().getConfigurationSection("mentions"));
@@ -321,7 +331,8 @@ public final class LPC extends JavaPlugin implements Listener {
 		}
 		// Friends-only, but nothing can answer "are these two friends?" — show the message
 		// rather than silently cutting the player off from chat entirely.
-		return !this.friendSystem.isAvailable() || this.friendSystem.areFriends(watching, speaker.getUniqueId());
+		final Boolean friends = this.friendSystem.friendship(watching, speaker.getUniqueId());
+		return friends == null || friends;
 	}
 
 	/**
@@ -359,8 +370,10 @@ public final class LPC extends JavaPlugin implements Listener {
 			return false;
 		}
 		final String warning = this.characterFilter.warningFor(rejected);
-		player.sendMessage(warning);
-		sendActionBar(player, warning);
+		Schedulers.forPlayer(this, player, target -> {
+			target.sendMessage(warning);
+			sendActionBar(target, warning);
+		});
 		return true;
 	}
 
@@ -398,8 +411,8 @@ public final class LPC extends JavaPlugin implements Listener {
 		}
 		// Friends-only, with the same fallback as /showchatfrom: when nothing can answer
 		// "are these two friends?", let the mention through rather than dropping it.
-		return !this.friendSystem.isAvailable()
-			|| this.friendSystem.areFriends(mentioned.getUniqueId(), speaker.getUniqueId());
+		final Boolean friends = this.friendSystem.friendship(mentioned.getUniqueId(), speaker.getUniqueId());
+		return friends == null || friends;
 	}
 
 	/**
@@ -413,18 +426,12 @@ public final class LPC extends JavaPlugin implements Listener {
 			return;
 		}
 		final MentionService service = this.mentions;
-		final Runnable ping = () -> {
-			for (final Player player : mentioned) {
-				if (player.isOnline()) {
-					service.playPing(player);
-					sendActionBar(player, service.actionBarFor(speaker));
-				}
-			}
-		};
-		try {
-			getServer().getScheduler().runTask(this, ping);
-		} catch (final IllegalArgumentException | IllegalStateException | UnsupportedOperationException noScheduler) {
-			ping.run();
+		final String actionBar = service.actionBarFor(speaker);
+		for (final Player player : mentioned) {
+			Schedulers.forPlayer(this, player, target -> {
+				service.playPing(target);
+				sendActionBar(target, actionBar);
+			});
 		}
 	}
 

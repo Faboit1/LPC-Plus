@@ -111,16 +111,9 @@ final class ChatPreferences {
 		return prefs;
 	}
 
-	/**
-	 * Writes the file off the main thread, falling back to writing it inline when the
-	 * scheduler will not take the task — which is the case during {@code onDisable}.
-	 */
+	/** Writes the file off the server's threads; see {@link Schedulers#async}. */
 	private void saveLater() {
-		try {
-			this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, this::save);
-		} catch (final IllegalArgumentException | IllegalStateException | UnsupportedOperationException schedulerClosed) {
-			this.save();
-		}
+		Schedulers.async(this.plugin, this::save);
 	}
 
 	/** Rewrites the whole file; synchronized so two queued saves cannot interleave. */

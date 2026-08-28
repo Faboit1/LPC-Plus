@@ -35,6 +35,13 @@ jobs:
       - name: Build with Maven
         run: mvn -B -ntp clean package
 
+      # plugin.yml and config.yml are resources, so compiling never looks at them: a
+      # broken descriptor builds green and only fails when a server tries to load it.
+      - name: Validate plugin.yml and config.yml
+        run: |
+          mvn -B -ntp -q dependency:build-classpath -Dmdep.outputFile=target/cp.txt
+          java -cp "target/classes:$(cat target/cp.txt)" .github/scripts/DescriptorCheck.java
+
       - name: Upload plugin jar
         uses: actions/upload-artifact@v4
         with:
