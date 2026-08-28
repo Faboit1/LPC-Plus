@@ -109,7 +109,21 @@ final class PaperChatListener implements Listener {
 		return builder.append(LEGACY.deserialize(carried + legacyText.substring(cursor))).build();
 	}
 
+	/**
+	 * Joins the format and the message.
+	 *
+	 * <p>A format carrying MiniMessage tags — which is what a LuckPerms prefix usually
+	 * looks like — is rendered by {@link MiniMessageFormat}, so a gradient opened in the
+	 * prefix still covers what follows it. Anything else takes the legacy path unchanged,
+	 * and so does a format MiniMessage cannot parse.</p>
+	 */
 	private Component formatMessage(final String format, final Component message) {
+		if (MiniMessageFormat.hasTags(format)) {
+			final Component rendered = MiniMessageFormat.render(format, message);
+			if (rendered != null) {
+				return rendered;
+			}
+		}
 		final String[] parts = format.split("\\{message}", -1);
 		Component component = LEGACY.deserialize(parts[0]);
 
