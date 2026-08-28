@@ -2,6 +2,7 @@ name: ${project.name}
 description: ${project.description}
 version: ${project.version}
 main: ${main.class}
+folia-supported: true
 author: ${author}
 api-version: 1.13
 depend: [LuckPerms]
@@ -43,7 +44,7 @@ permissions:
     description: Allows use of /allowmentions
     default: true
   lpc.emoji:
-    description: Allows :shortcode: emoji in chat messages
+    description: "Allows :shortcode: emoji in chat messages"
     default: true
   lpc.mention:
     description: Allows mentioning other players in chat
