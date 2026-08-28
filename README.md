@@ -51,6 +51,14 @@ Without FriendSystem installed, LPC cannot tell who is friends with whom, so `fr
 deliberately behaves like the open option rather than silently cutting a player off from
 chat. Players are told this when they pick it.
 
+## Server compatibility
+
+Runs on Spigot, Paper and Folia from one jar. Paper gets the richer chat path
+(per-viewer filtering and emoji hovers); Spigot falls back to the legacy chat event.
+On Folia, work that touches a player is dispatched to that player's own scheduler and
+the settings file is written through the async scheduler — both reached reflectively,
+so the same jar still loads on Spigot where those schedulers do not exist.
+
 ## Building
 
 Every push to `main` and every pull request is compiled automatically by GitHub
@@ -63,6 +71,19 @@ mvn clean package
 ```
 
 The jar is written to `target/LPC-<version>.jar`.
+
+`plugin.yml` and `config.yml` are resources, so compiling never parses them — a broken
+descriptor builds green and only fails when a server tries to load the plugin. CI runs a
+check for exactly that, which you can run yourself after a build:
+
+```sh
+mvn -q dependency:build-classpath -Dmdep.outputFile=target/cp.txt
+java -cp "target/classes:$(cat target/cp.txt)" .github/scripts/DescriptorCheck.java
+```
+
+It parses `plugin.yml` with Bukkit's own `PluginDescriptionFile`, checks the main class
+is in the build and that Maven substituted every `${...}`, and checks `config.yml` parses
+with no emoji shortcode lost to YAML's boolean coercion.
 
 JDK 25 is required because `paper-api` 26.1.2 ships Java 25 class files. The
 plugin itself is still compiled to Java 8 bytecode, so it keeps running on the

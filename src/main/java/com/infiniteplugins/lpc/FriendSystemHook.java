@@ -43,21 +43,22 @@ final class FriendSystemHook {
 	}
 
 	/**
-	 * Whether the two players are friends.
+	 * Whether the two players are friends, or {@code null} when FriendSystem cannot say.
 	 *
-	 * @return {@code false} when FriendSystem cannot answer, so callers should check
-	 *         {@link #isAvailable()} first if "unknown" needs to differ from "no"
+	 * <p>Answering "unknown" separately from "no" in one call matters: this runs once per
+	 * viewer per chat message, and asking {@link #isAvailable()} first would double the
+	 * work for every one of them.</p>
 	 */
-	boolean areFriends(final UUID a, final UUID b) {
+	Boolean friendship(final UUID a, final UUID b) {
 		final Object api = this.api();
 		if (api == null) {
-			return false;
+			return null;
 		}
 		try {
 			return Boolean.TRUE.equals(this.areFriendsMethod.invoke(api, a, b));
 		} catch (final ReflectiveOperationException | RuntimeException error) {
 			this.giveUp("FriendSystem rejected an areFriends(...) call", error);
-			return false;
+			return null;
 		}
 	}
 
